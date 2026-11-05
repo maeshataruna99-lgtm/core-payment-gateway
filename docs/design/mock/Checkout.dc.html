@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Checkout demo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#fafafa}
+a{color:#312e81}
+button,a,label{transition:background-color .15s,opacity .15s}
+button:hover{opacity:.88}
+:focus-visible{outline:3px solid #818cf8;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</helmet>
+<div style="background: #fafafa; color: #0a0a0a; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; line-height: 20px">
+<div style="display: flex; align-items: center; gap: 8px; background: #fffbeb; color: #78350f; border-bottom: 1px solid #fde68a; padding: 8px 16px; font-weight: 500"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 9v4 M12 17h.01 M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg><span>SANDBOX: ini simulasi. Jangan memasukkan kartu, PIN, OTP, atau login bank asli.</span></div>
+<div style="max-width: 1040px; margin: 0 auto; box-sizing: border-box; padding: 32px 16px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+<main style="flex: 3 1 420px; min-width: 0; background: #ffffff; border: 1px solid #e5e5e5; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.05); padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px">
+<div><h1 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">Toko Contoh</h1><div style="color: #636363; font-family: 'IBM Plex Mono', monospace; font-size: 13px">ORD-20261105-0142</div></div>
+<div style="text-align: right"><div style="font-size: 24px; line-height: 32px; font-weight: 600; font-variant-numeric: tabular-nums">Rp 250.000</div><div style="color: #636363">Berlaku sampai 15:02 WIB</div></div>
+</div>
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+<legend style="padding: 0 0 8px; font-weight: 600">Pilih metode simulasi</legend>
+<sc-for list="{{methods}}" as="m" hint-placeholder-count="4">
+<label style="display: flex; align-items: center; gap: 12px; min-height: 60px; box-sizing: border-box; padding: 8px 14px; background: {{m.bg}}; border: 1px solid {{m.line}}; border-radius: 8px; cursor: pointer"><input type="radio" name="method" checked="{{m.checked}}" onChange="{{m.pick}}" style="width: 16px; height: 16px; margin: 0; accent-color: #312e81"><span><span style="font-weight: 500">{{m.name}}</span><br><span style="color: #636363">{{m.note}}</span></span></label>
+</sc-for>
+</fieldset>
+<section role="status" style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600">Status pembayaran</h2>
+<span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; background: {{st.bg}}; color: {{st.fg}}; border: 1px solid {{st.line}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{st.icon}}"></path></svg>{{st.code}}</span>
+</div>
+<p style="margin: 0">{{st.text}}</p>
+<sc-if value="{{showInstr}}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{isQris}}" hint-placeholder-val="{{ true }}">
+<div style="width: 180px; height: 180px; box-sizing: border-box; padding: 16px; display: flex; align-items: center; justify-content: center; text-align: center; background: #f5f5f5; border: 1px dashed #737373; border-radius: 8px; color: #404040; font-weight: 500">QR CONTOH<br>Tidak bisa dipindai</div>
+</sc-if>
+<sc-if value="{{isOther}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 12px; background: #f5f5f5; border-radius: 8px"><div style="color: #525252">{{instrLabel}}</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 16px; line-height: 24px">{{instrValue}}</div></div>
+</sc-if>
+</sc-if>
+</section>
+</main>
+<aside aria-label="Kontrol demo" style="flex: 2 1 280px; min-width: 0; box-sizing: border-box; background: #f5f5f5; border: 1px dashed #737373; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600">Kontrol demo</h2>
+<p style="margin: 0 0 8px; color: #525252">Bukan bagian checkout. Panel ini memicu event dari provider simulasi.</p>
+<sc-for list="{{demo}}" as="d" hint-placeholder-count="4">
+<button type="button" onClick="{{d.fire}}" style="min-height: 44px; padding: 0 12px; background: #ffffff; border: 1px solid #d4d4d4; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); color: #0a0a0a; font: inherit; font-weight: 500; cursor: pointer">{{d.label}}</button>
+</sc-for>
+<a href="Monitor.dc.html" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; font-weight: 500; text-underline-offset: 4px">Lihat di monitor</a>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { method: 'qris', status: 'PENDING' };
+}
+renderVals() {
+const { method, status } = this.state;
+const list = [
+{ id: 'qris', name: 'QRIS simulasi', note: 'Menampilkan QR contoh' },
+{ id: 'va', name: 'Virtual Account simulasi', note: 'Bank simulasi, tanpa transfer nyata' },
+{ id: 'wallet', name: 'E-wallet simulasi', note: 'Saldo simulasi, tanpa akun asli' },
+{ id: 'card', name: 'Kartu simulasi', note: 'Token mock, tanpa nomor kartu' }
+];
+const statuses = {
+PENDING: { code: 'PENDING', bg: '#fffbeb', fg: '#92400e', line: '#fde68a', icon: 'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20 M12 6v6l4 2', text: 'Menunggu pembayaran simulasi. Pending belum berarti sukses.' },
+SUCCEEDED: { code: 'SUCCEEDED', bg: '#f0fdf4', fg: '#166534', line: '#bbf7d0', icon: 'M20 6 9 17l-5-5', text: 'Pembayaran simulasi berhasil. Tidak ada uang nyata yang berpindah.' },
+FAILED: { code: 'FAILED', bg: '#fef2f2', fg: '#991b1b', line: '#fecaca', icon: 'M18 6 6 18 M6 6l12 12', text: 'Pembayaran simulasi gagal. Silakan pilih metode lain.' },
+UNKNOWN: { code: 'UNKNOWN', bg: '#ffffff', fg: '#0a0a0a', line: '#737373', icon: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01', text: 'Hasil belum pasti. Jangan membayar ulang. Sistem sedang mengecek status.' }
+};
+const instr = {
+va: ['Nomor VA contoh', '8808 0000 0142'],
+wallet: ['Kode simulasi', 'WLT-0142'],
+card: ['Token mock', 'tok_sandbox_0142']
+};
+const fire = (s) => () => this.setState({ status: s });
+return {
+methods: list.map((m) => ({
+...m,
+checked: m.id === method,
+bg: m.id === method ? '#eef2ff' : '#ffffff',
+line: m.id === method ? '#312e81' : '#e5e5e5',
+pick: () => this.setState({ method: m.id, status: 'PENDING' })
+})),
+st: statuses[status],
+showInstr: status === 'PENDING',
+isQris: method === 'qris',
+isOther: method !== 'qris',
+instrLabel: instr[method] ? instr[method][0] : '',
+instrValue: instr[method] ? instr[method][1] : '',
+demo: [
+{ label: 'Simulasikan sukses', fire: fire('SUCCEEDED') },
+{ label: 'Simulasikan gagal', fire: fire('FAILED') },
+{ label: 'Simulasikan timeout', fire: fire('UNKNOWN') },
+{ label: 'Kembali ke pending', fire: fire('PENDING') }
+]
+};
+}
+}
+</script>
+</body>
+</html>

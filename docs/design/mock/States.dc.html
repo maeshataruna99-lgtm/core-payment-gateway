@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Tabel state payment attempt</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; padding: 56px 64px; background: #ffffff; color: #0f172a; font-family: 'IBM Plex Sans', system-ui, sans-serif; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700">State payment attempt</h1>
+<p style="margin: 0; font-size: 16px; line-height: 24px; color: #475569">Baris adalah state sekarang, kolom adalah event masuk. Event ID yang di-replay ditolak sebelum tabel ini berlaku.</p>
+</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+<thead>
+<tr style="text-align: left; color: #475569; border-bottom: 2px solid #cbd5e1">
+<th scope="col" style="padding: 12px 8px; font-weight: 600">State</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Provider: pending</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Provider: failed</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Timeout</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Callback: success</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Callback: failed</th>
+<th scope="col" style="padding: 12px 8px; font-weight: 600">Expiry</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{rows}}" as="row" hint-placeholder-count="6">
+<tr style="border-bottom: 1px solid #e2e8f0">
+<th scope="row" style="padding: 14px 8px; text-align: left"><span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: {{row.bg}}; color: {{row.fg}}; border: 1px {{row.line}} #475569">{{row.state}}</span></th>
+<sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="6">
+<td style="padding: 14px 8px; color: {{cell.color}}; font-weight: {{cell.weight}}">{{cell.text}}</td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #475569">Sukses yang datang telat tetap dicatat. Sukses pertama melunasi checkout, sukses berikutnya menjadi discrepancy untuk direfund.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":640}}'>
+class Component extends DCLogic {
+renderVals() {
+const chips = {
+CREATED: { bg: '#f1f5f9', fg: '#334155', line: 'none' },
+PENDING: { bg: '#fef3c7', fg: '#78350f', line: 'none' },
+UNKNOWN: { bg: '#ffffff', fg: '#0f172a', line: 'dashed' },
+SUCCEEDED: { bg: '#dcfce7', fg: '#166534', line: 'none' },
+FAILED: { bg: '#fee2e2', fg: '#991b1b', line: 'none' },
+EXPIRED: { bg: '#e2e8f0', fg: '#334155', line: 'none' }
+};
+const nc = 'Tetap';
+const data = [
+['CREATED', ['PENDING', 'FAILED', 'UNKNOWN', 'SUCCEEDED', 'FAILED', 'EXPIRED']],
+['PENDING', [nc, 'FAILED', 'UNKNOWN', 'SUCCEEDED', 'FAILED', 'EXPIRED']],
+['UNKNOWN', ['PENDING', 'FAILED', 'Tetap, cek status', 'SUCCEEDED', 'FAILED', nc]],
+['SUCCEEDED', [nc, 'Tetap, discrepancy', nc, 'Tetap, dedupe', 'Tetap, discrepancy', nc]],
+['FAILED', [nc, nc, nc, 'SUCCEEDED (telat)', nc, nc]],
+['EXPIRED', [nc, nc, nc, 'SUCCEEDED (telat)', nc, nc]]
+];
+const rows = data.map(([state, cells]) => ({
+state,
+...chips[state],
+cells: cells.map((text) => ({
+text,
+color: text.startsWith('Tetap') ? '#475569' : '#0f172a',
+weight: text.startsWith('Tetap') ? 400 : 600
+}))
+}));
+return { rows };
+}
+}
+</script>
+</body>
+</html>

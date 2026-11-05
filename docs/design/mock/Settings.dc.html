@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Pengaturan sandbox</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#312e81}
+a,label{transition:background-color .15s,opacity .15s}
+nav a:hover{background:#f5f5f5}
+:focus-visible{outline:3px solid #818cf8;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</helmet>
+<div style="background: #ffffff; color: #0a0a0a; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; line-height: 20px">
+<div style="display: flex; align-items: center; gap: 8px; background: #fffbeb; color: #78350f; border-bottom: 1px solid #fde68a; padding: 8px 16px; font-weight: 500"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 9v4 M12 17h.01 M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg><span>SANDBOX: semua transaksi disimulasikan. Tidak ada uang nyata yang berpindah.</span></div>
+<div style="display: flex; flex-wrap: wrap">
+<nav aria-label="Menu utama" style="flex: 1 1 224px; box-sizing: border-box; padding: 12px; background: #fafafa; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px; margin-bottom: 8px"><span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #312e81; color: #ffffff"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z M2 10h20"></path></svg></span><span><b style="font-weight: 600">PayGate</b><br><span style="font-size: 12px; line-height: 16px; color: #636363">Sandbox</span></span></div>
+<div style="padding: 8px; font-size: 12px; line-height: 16px; font-weight: 500; color: #636363">Operasi</div>
+<a href="Overview.dc.html" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; color: #404040"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v9H3z M14 3h7v5h-7z M14 12h7v9h-7z M3 16h7v5H3z"></path></svg>Ringkasan</a>
+<a href="Monitor.dc.html" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; color: #404040"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>Monitor transaksi</a>
+<a href="Webhooks.dc.html" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; color: #404040"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13 M22 2l-7 20-4-9-9-4z"></path></svg>Webhook Center</a>
+<a href="Settlement.dc.html" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; color: #404040"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18 M6 18v-7 M10 18v-7 M14 18v-7 M18 18v-7 M12 2l8 5H4z"></path></svg>Settlement</a>
+<div style="padding: 16px 8px 8px; font-size: 12px; line-height: 16px; font-weight: 500; color: #636363">Demo</div>
+<a href="Checkout.dc.html" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; color: #404040"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z M2 10h20"></path></svg>Checkout demo</a>
+<a href="Settings.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; text-decoration: none; background: #f0f0f0; color: #0a0a0a; font-weight: 500"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6"></path></svg>Pengaturan sandbox</a>
+</nav>
+<main style="flex: 999 1 560px; min-width: 0">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; box-sizing: border-box; padding: 8px 24px; border-bottom: 1px solid #e5e5e5"><div style="color: #636363">PayGate / <span style="color: #0a0a0a; font-weight: 500">Pengaturan sandbox</span></div><span style="display: inline-flex; padding: 2px 8px; border: 1px solid #e5e5e5; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 500">Kontrol demo</span></header>
+<div style="padding: 24px; max-width: 760px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em">Pengaturan sandbox</h1>
+<p style="margin: 0; color: #636363">Kontrol demo untuk provider simulasi. Secret tidak pernah ditampilkan di sini.</p>
+</div>
+<section style="border: 1px solid #e5e5e5; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.05); padding: 20px; display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600">Mode</h2>
+<p style="margin: 0; color: #404040">Sandbox aktif. Mode ini tidak bisa dimatikan, karena aplikasi tidak punya koneksi ke provider nyata.</p>
+</section>
+<section style="border: 1px solid #e5e5e5; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.05); padding: 20px">
+<fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px">
+<legend style="padding: 0 0 12px; font-weight: 600">Skenario provider berikutnya</legend>
+<sc-for list="{{scenarios}}" as="s" hint-placeholder-count="4">
+<label style="display: flex; align-items: center; gap: 12px; min-height: 60px; box-sizing: border-box; padding: 8px 14px; background: {{s.bg}}; border: 1px solid {{s.line}}; border-radius: 8px; cursor: pointer"><input type="radio" name="scenario" checked="{{s.checked}}" onChange="{{s.pick}}" style="width: 16px; height: 16px; margin: 0; accent-color: #312e81"><span><span style="font-weight: 500">{{s.name}}</span><br><span style="color: #636363">{{s.note}}</span></span></label>
+</sc-for>
+</fieldset>
+</section>
+<section style="border: 1px solid #e5e5e5; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.05); padding: 20px">
+<label style="display: flex; flex-direction: column; gap: 8px"><span style="display: flex; justify-content: space-between; gap: 16px; font-weight: 600"><span>Latensi provider simulasi</span><span style="font-weight: 500; font-variant-numeric: tabular-nums">{{latency}} ms</span></span><input type="range" min="0" max="5000" step="100" value="{{latency}}" onChange="{{setLatency}}" style="width: 100%; height: 44px; margin: 0; accent-color: #312e81"></label>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { scenario: 'success', latency: 800 };
+}
+renderVals() {
+const { scenario, latency } = this.state;
+const list = [
+{ id: 'success', name: 'Sukses', note: 'PENDING, lalu SUCCEEDED' },
+{ id: 'failure', name: 'Gagal', note: 'Provider mengembalikan FAILED' },
+{ id: 'pending', name: 'Tetap pending', note: 'Tanpa callback sampai expiry' },
+{ id: 'timeout', name: 'Timeout', note: 'Attempt menjadi UNKNOWN' }
+];
+return {
+latency,
+setLatency: (e) => this.setState({ latency: Number(e.target.value) }),
+scenarios: list.map((s) => ({
+...s,
+checked: s.id === scenario,
+bg: s.id === scenario ? '#eef2ff' : '#ffffff',
+line: s.id === scenario ? '#312e81' : '#e5e5e5',
+pick: () => this.setState({ scenario: s.id })
+}))
+};
+}
+}
+</script>
+</body>
+</html>
