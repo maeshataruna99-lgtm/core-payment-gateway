@@ -1,7 +1,7 @@
 #!/bin/sh
-# Purpose: Starts the local demo and runs a simulated payment from checkout to final settlement.
+# Purpose: Starts the local demo and runs a simulated payment from checkout to reconciliation.
 # Why: It proves the startup, payment lifecycle, replay protection, webhook retry, refund,
-#      settlement, and audit chain from a clean checkout.
+#      settlement, audit chain, and reconciliation from a clean checkout.
 # Prerequisites: Docker with Compose, curl, and openssl. Java is not needed.
 # How to run: sh scripts/smoke-test.sh
 # Inputs: BACKEND_PORT, optional, defaults to 8080.
@@ -10,7 +10,8 @@
 #         KEEP_RUNNING=1 leaves the demo running.
 # Expected output: "Smoke test passed" and exit code 0.
 # Failure behavior: Prints container logs and exits non-zero.
-# Data: It creates one simulated checkout, payment, refund, and settlement. It deletes the demo's containers and database
+# Data: It creates one simulated checkout, payment, refund, settlement, and two reconciliation
+#       runs. It deletes the demo's containers and database
 #       volume when it finishes, unless KEEP_RUNNING=1 is set.
 set -eu
 
@@ -185,4 +186,31 @@ case "$(curl -fsS -H "X-Api-Key: $operator_key" "$base/api/v1/audit-events/verif
   *) fail "the audit chain is not valid" ;;
 esac
 
-echo "Smoke test passed: payment $payment_id, webhook retried, refund and settlement of $expected_net final"
+period="merchantId=$demo_merchant_id&from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z"
+reconcile() {
+  curl -fsS -H "X-Api-Key: $operator_key" \
+    "$base/api/v1/sandbox/settlement-files?$period&faults=$1" \
+    | curl -fsS -X POST "$base/api/v1/reconciliation/runs?$period" \
+        -H "X-Api-Key: $operator_key" \
+        -H "Content-Type: text/csv" \
+        --data-binary @-
+}
+
+clean_run="$(reconcile "")" || fail "could not run a reconciliation"
+case "$clean_run" in
+  *'"matchedCount":1'*'"discrepancyCount":0'*) ;;
+  *) fail "a clean settlement file reported differences: $clean_run" ;;
+esac
+faulty_run="$(reconcile "AMOUNT,UNKNOWN_REFERENCE")" || fail "could not run a reconciliation"
+case "$faulty_run" in
+  *'"discrepancyCount":2'*AMOUNT_MISMATCH*MISSING_INTERNALLY*) ;;
+  *) fail "reconciliation did not find the deliberate errors: $faulty_run" ;;
+esac
+paid_after="$(curl -fsS -H "X-Api-Key: $merchant_key" "$base/api/v1/payments/$payment_id")" \
+  || fail "could not read the payment"
+case "$paid_after" in
+  *'"status":"SUCCEEDED"'*) ;;
+  *) fail "reconciliation changed the payment: $paid_after" ;;
+esac
+
+echo "Smoke test passed: payment $payment_id, webhook retried, refund, settlement of $expected_net, and reconciliation"

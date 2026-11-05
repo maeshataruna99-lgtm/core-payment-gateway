@@ -4,7 +4,7 @@ A portfolio simulator of an Indonesian payment gateway.
 
 **SANDBOX ONLY:** it processes no real funds, connects to no real bank or provider, and must not receive real card numbers, PINs, OTPs, or bank logins. It does not claim PCI DSS, Bank Indonesia, or BI-SNAP compliance, or compatibility with any provider's API.
 
-Status: Phase 5, refunds, ledger, and settlement. A simulated payment can run through a signed callback, webhooks, refunds, and a final settlement batch. Reconciliation arrives in Phase 6, and the dashboard in Phase 7.
+Status: Phase 6, reconciliation. All 10 REST use cases work through the API: a simulated payment can run through a signed callback, webhooks, refunds, a final settlement batch, and reconciliation. The dashboard arrives in Phase 7.
 
 ## Run the demo
 
@@ -48,6 +48,12 @@ The last two digits of the amount choose how the simulated provider behaves:
 Staff settle a merchant in two steps. `POST /api/v1/settlements/preview` shows gross, fees, refunds, adjustments, and net without saving anything. `POST /api/v1/settlements` finalizes that batch, and needs `"confirm": true` and the preview's net as `expectedNet`. No bank transfer happens.
 
 Staff can read privileged actions at `GET /api/v1/audit-events`, and check their hash chain at `GET /api/v1/audit-events/verification`.
+
+## Reconciliation
+
+`POST /api/v1/reconciliation/runs?merchantId=&from=&to=` compares a provider's settlement file, sent as a CSV body, with internal payments. It reports payments missing from either side, duplicates, and differences in amount, currency, status, or date. Dates may differ by up to 24 hours. Differences are stored for review and never change a payment or the ledger.
+
+In the demo, `GET /api/v1/sandbox/settlement-files?merchantId=&from=&to=&faults=` generates a file. `faults` can add deliberate errors: `AMOUNT`, `STATUS`, `MISSING`, `DUPLICATE`, and `UNKNOWN_REFERENCE`. The demo merchant ID is `00000000-0000-4000-8000-000000000001`.
 
 ## Receive webhooks
 

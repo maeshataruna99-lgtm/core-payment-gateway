@@ -44,6 +44,28 @@ class ModuleBoundariesTest {
   }
 
   @Test
+  void reconciliationCannotChangeMoneyRecords() {
+    noClasses()
+        .that()
+        .resideInAPackage("com.example.payment.reconciliation..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAnyPackage(
+            "com.example.payment.ledger..",
+            "com.example.payment.refund..",
+            "com.example.payment.settlement..",
+            "com.example.payment.checkout..")
+        .check(classes);
+    noClasses()
+        .that()
+        .resideInAPackage("com.example.payment.reconciliation..")
+        .should()
+        .dependOnClassesThat()
+        .haveSimpleNameContaining("PaymentEventService")
+        .check(classes);
+  }
+
+  @Test
   void ledgerDependsOnlyOnCommon() {
     noClasses()
         .that()

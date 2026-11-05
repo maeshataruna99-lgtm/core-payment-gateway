@@ -3,6 +3,7 @@ package com.example.payment.payment;
 import com.example.payment.payment.PaymentStateMachine.State;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +34,12 @@ interface PaymentAttemptRepository extends JpaRepository<PaymentAttempt, UUID> {
       @Param("created") State created,
       @Param("createdBefore") Instant createdBefore,
       Limit limit);
+
+  List<PaymentAttempt> findByMerchantIdAndStateAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThan(
+      UUID merchantId, State state, Instant from, Instant to);
+
+  List<PaymentAttempt> findByMerchantIdAndProviderReferenceIn(
+      UUID merchantId, Collection<String> references);
 
   List<PaymentAttempt> findByStateInAndExpiresAtLessThanEqual(
       List<State> states, Instant now, Limit limit);

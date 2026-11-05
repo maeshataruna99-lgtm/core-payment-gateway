@@ -80,6 +80,18 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
     merchantServer.stop(0);
   }
 
+  /** Other test classes share this database, so the outbox can hold more than one batch. */
+  private void publishAll() {
+    long unpublished;
+    do {
+      publisher.publish();
+      unpublished =
+          jdbc.sql("SELECT count(*) FROM outbox_events WHERE published_at IS NULL")
+              .query(Long.class)
+              .single();
+    } while (unpublished > 0);
+  }
+
   private String hookUrl() {
     return "http://localhost:" + merchantServer.getAddress().getPort() + "/hook";
   }
@@ -145,7 +157,7 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
   private JsonNode paidDelivery() throws Exception {
     register(keyA, ALL_EVENTS);
     answer(pay(), "SUCCESS");
-    publisher.publish();
+    publishAll();
     return json.readTree(get(DELIVERIES, Map.of("X-Api-Key", keyA)).body()).get("items").get(0);
   }
 
@@ -218,7 +230,7 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
     JsonNode endpoint = register(keyA, ALL_EVENTS);
     JsonNode payment = pay();
     answer(payment, "SUCCESS");
-    publisher.publish();
+    publishAll();
     deliverer.run();
     deliverer.run();
 
@@ -244,7 +256,7 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
     register(keyA, ALL_EVENTS);
     JsonNode payment = pay();
     answer(payment, "SUCCESS");
-    publisher.publish();
+    publishAll();
     deliverer.run();
     deliverer.run();
     deliverer.run();
@@ -351,7 +363,7 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
   void onlySubscribedEventsCreateDeliveries() throws Exception {
     register(keyA, "[\"payment.failed\"]");
     answer(pay(), "SUCCESS");
-    publisher.publish();
+    publishAll();
     deliverer.run();
     assertEquals(0, received.size());
   }
@@ -360,7 +372,7 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
   void disabledEndpointStopsDelivery() throws Exception {
     JsonNode endpoint = register(keyA, ALL_EVENTS);
     answer(pay(), "SUCCESS");
-    publisher.publish();
+    publishAll();
     post(
         ENDPOINTS + "/" + endpoint.get("id").asString() + "/disable",
         Map.of("X-Api-Key", keyA),
@@ -376,12 +388,12 @@ class WebhookIntegrationTest extends AbstractIntegrationTest {
   void onlyFinalStatesAreAnnounced() throws Exception {
     register(keyA, ALL_EVENTS);
     JsonNode pending = pay();
-    publisher.publish();
+    publishAll();
     deliverer.run();
     assertEquals(0, received.size());
 
     answer(pending, "FAILED");
-    publisher.publish();
+    publishAll();
     deliverer.run();
     assertEquals(1, received.size());
     assertEquals("payment.failed", json.readTree(received.get(0).body()).get("type").asString());
