@@ -1,5 +1,6 @@
 package com.example.payment.webhook;
 
+import com.example.payment.audit.AuditLog;
 import com.example.payment.common.DomainException;
 import com.example.payment.merchant.ApiClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -59,11 +60,14 @@ class WebhookDeliveryController {
 
   private final JdbcClient jdbc;
   private final WebhookProperties properties;
+  private final AuditLog audit;
   private final Clock clock;
 
-  WebhookDeliveryController(JdbcClient jdbc, WebhookProperties properties, Clock clock) {
+  WebhookDeliveryController(
+      JdbcClient jdbc, WebhookProperties properties, AuditLog audit, Clock clock) {
     this.jdbc = jdbc;
     this.properties = properties;
+    this.audit = audit;
     this.clock = clock;
   }
 
@@ -166,6 +170,8 @@ class WebhookDeliveryController {
               ? "This delivery has reached its retry limit."
               : "Only a failed delivery can be retried.");
     }
+    audit.record(
+        client.actor(), "webhook.delivery.retried", "webhook_delivery", deliveryId.toString());
     return current;
   }
 

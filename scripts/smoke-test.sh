@@ -1,21 +1,23 @@
 #!/bin/sh
-# Purpose: Starts the local demo and runs a simulated payment from checkout to delivered webhook.
-# Why: It proves the startup, payment lifecycle, replay protection, and webhook retry from a
-#      clean checkout.
+# Purpose: Starts the local demo and runs a simulated payment from checkout to final settlement.
+# Why: It proves the startup, payment lifecycle, replay protection, webhook retry, refund,
+#      settlement, and audit chain from a clean checkout.
 # Prerequisites: Docker with Compose, curl, and openssl. Java is not needed.
 # How to run: sh scripts/smoke-test.sh
 # Inputs: BACKEND_PORT, optional, defaults to 8080.
-#         DEMO_MERCHANT_API_KEY and PROVIDER_CALLBACK_SECRET, optional, must match the demo.
+#         DEMO_MERCHANT_API_KEY, DEMO_OPERATOR_API_KEY, and PROVIDER_CALLBACK_SECRET, optional,
+#         must match the demo.
 #         KEEP_RUNNING=1 leaves the demo running.
 # Expected output: "Smoke test passed" and exit code 0.
 # Failure behavior: Prints container logs and exits non-zero.
-# Data: It creates one simulated checkout and payment. It deletes the demo's containers and database
+# Data: It creates one simulated checkout, payment, refund, and settlement. It deletes the demo's containers and database
 #       volume when it finishes, unless KEEP_RUNNING=1 is set.
 set -eu
 
 compose_file="$(dirname "$0")/../infra/docker/compose.yaml"
 base="http://localhost:${BACKEND_PORT:-8080}"
 merchant_key="${DEMO_MERCHANT_API_KEY:-sandbox-demo-merchant-key}"
+operator_key="${DEMO_OPERATOR_API_KEY:-sandbox-demo-operator-key}"
 callback_secret="${PROVIDER_CALLBACK_SECRET:-sandbox-demo-callback-secret}"
 demo_merchant_id="00000000-0000-4000-8000-000000000001"
 checkouts="$base/api/v1/checkout-sessions"
@@ -145,4 +147,42 @@ case "$delivery" in
   *) fail "the webhook was not delivered on its second attempt: $delivery" ;;
 esac
 
-echo "Smoke test passed: checkout $id, payment $payment_id, webhook delivered after one retry"
+refund="$(curl -fsS -X POST "$base/api/v1/payments/$payment_id/refunds" \
+  -H "X-Api-Key: $merchant_key" \
+  -H "Idempotency-Key: smoke-test-refund" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":50000,"reason":"Smoke test"}')" || fail "could not refund"
+case "$refund" in
+  *'"status":"SUCCEEDED"'*) ;;
+  *) fail "the refund did not succeed: $refund" ;;
+esac
+
+# 250000 gross, minus 1750 in simulated fees, minus the 50000 refund.
+expected_net=198250
+preview="$(curl -fsS -X POST "$base/api/v1/settlements/preview" \
+  -H "X-Api-Key: $operator_key" \
+  -H "Content-Type: application/json" \
+  -d "{\"merchantId\":\"$demo_merchant_id\"}")" || fail "could not preview the settlement"
+case "$preview" in
+  *"\"net\":$expected_net"*) ;;
+  *) fail "unexpected settlement preview: $preview" ;;
+esac
+curl -fsS -X POST "$base/api/v1/settlements" \
+  -H "X-Api-Key: $operator_key" \
+  -H "Idempotency-Key: smoke-test-settlement" \
+  -H "Content-Type: application/json" \
+  -d "{\"merchantId\":\"$demo_merchant_id\",\"expectedNet\":$expected_net,\"confirm\":true}" \
+  > /dev/null || fail "could not finalize the settlement"
+[ "$(status_of -X POST "$base/api/v1/settlements" \
+  -H "X-Api-Key: $operator_key" \
+  -H "Idempotency-Key: smoke-test-settlement-2" \
+  -H "Content-Type: application/json" \
+  -d "{\"merchantId\":\"$demo_merchant_id\",\"expectedNet\":$expected_net,\"confirm\":true}")" = "409" ] \
+  || fail "the same money could be settled twice"
+
+case "$(curl -fsS -H "X-Api-Key: $operator_key" "$base/api/v1/audit-events/verification")" in
+  *'"valid":true'*) ;;
+  *) fail "the audit chain is not valid" ;;
+esac
+
+echo "Smoke test passed: payment $payment_id, webhook retried, refund and settlement of $expected_net final"

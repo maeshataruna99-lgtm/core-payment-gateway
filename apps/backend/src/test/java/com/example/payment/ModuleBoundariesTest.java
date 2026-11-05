@@ -35,7 +35,26 @@ class ModuleBoundariesTest {
             "com.example.payment.checkout..",
             "com.example.payment.payment..",
             "com.example.payment.provider..",
-            "com.example.payment.webhook..")
+            "com.example.payment.webhook..",
+            "com.example.payment.ledger..",
+            "com.example.payment.refund..",
+            "com.example.payment.settlement..",
+            "com.example.payment.audit..")
+        .check(classes);
+  }
+
+  @Test
+  void ledgerDependsOnlyOnCommon() {
+    noClasses()
+        .that()
+        .resideInAPackage("com.example.payment.ledger..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAnyPackage(
+            "com.example.payment.payment..",
+            "com.example.payment.refund..",
+            "com.example.payment.settlement..",
+            "com.example.payment.checkout..")
         .check(classes);
   }
 

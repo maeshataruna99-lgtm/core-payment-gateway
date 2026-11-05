@@ -55,6 +55,20 @@ class SandboxPaymentProviderTest {
   }
 
   @Test
+  void refundScenariosFollowTheAmount() {
+    UUID id = UUID.randomUUID();
+    PaymentProvider.RefundRequest ok = new PaymentProvider.RefundRequest(id, id, 1000);
+    PaymentProvider.RefundRequest rejected = new PaymentProvider.RefundRequest(id, id, 1001);
+    PaymentProvider.RefundRequest once = new PaymentProvider.RefundRequest(id, id, 1002);
+    PaymentProvider.RefundRequest always = new PaymentProvider.RefundRequest(id, id, 1003);
+    assertEquals(PaymentProvider.RefundOutcome.SUCCEEDED, qris.refund(ok));
+    assertEquals(PaymentProvider.RefundOutcome.FAILED, qris.refund(rejected));
+    assertThrows(PaymentProvider.TimeoutException.class, () -> qris.refund(once));
+    assertEquals(PaymentProvider.RefundOutcome.SUCCEEDED, qris.checkRefund(once));
+    assertThrows(PaymentProvider.TimeoutException.class, () -> qris.checkRefund(always));
+  }
+
+  @Test
   void channelRules() {
     assertTrue(qris.supportsChannel(null));
     assertFalse(qris.supportsChannel("SIM_BANK_A"));

@@ -7,6 +7,7 @@ import com.example.payment.common.Hashing;
 import com.example.payment.common.IdempotencyStore;
 import com.example.payment.merchant.ApiClient;
 import com.example.payment.payment.PaymentStateMachine.Event;
+import com.example.payment.provider.PaymentMethod;
 import com.example.payment.provider.PaymentProvider;
 import com.example.payment.provider.ProviderRegistry;
 import jakarta.persistence.EntityManager;
@@ -20,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -155,6 +158,32 @@ public class PaymentService {
     entityManager.flush();
     events.recordCreated(attempt, actor);
     return claim;
+  }
+
+  /** What the refund module may know about a payment. */
+  public record RefundablePayment(
+      UUID id, UUID merchantId, PaymentMethod method, long amount, String currency, boolean paid) {}
+
+  /**
+   * Locks a payment until the caller's transaction ends, so its refunds are checked one at a time.
+   *
+   * @throws DomainException not found, when the caller may not see the payment
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public RefundablePayment lockForRefund(UUID paymentId, ApiClient client) {
+    PaymentAttempt attempt =
+        attempts.findByIdForUpdate(paymentId).orElseThrow(PaymentService::notFound);
+    if (client.role() == ApiClient.Role.MERCHANT
+        && !attempt.merchantId().equals(client.merchantId())) {
+      throw notFound();
+    }
+    return new RefundablePayment(
+        attempt.id(),
+        attempt.merchantId(),
+        attempt.method(),
+        attempt.amount(),
+        attempt.currency(),
+        attempt.state() == PaymentStateMachine.State.SUCCEEDED);
   }
 
   /** Returns an attempt to the merchant that owns it, or to staff. */

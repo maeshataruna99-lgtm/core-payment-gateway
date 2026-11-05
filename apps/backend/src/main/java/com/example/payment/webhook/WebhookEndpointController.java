@@ -46,7 +46,7 @@ class WebhookEndpointController {
   @ResponseStatus(HttpStatus.CREATED)
   WebhookEndpointService.Endpoint register(
       @AuthenticationPrincipal ApiClient client, @Valid @RequestBody RegisterRequest request) {
-    return endpoints.register(client.merchantId(), request.url(), request.events());
+    return endpoints.register(client.merchantId(), client.actor(), request.url(), request.events());
   }
 
   @Operation(summary = "List webhook endpoints", security = @SecurityRequirement(name = "apiKey"))
@@ -61,6 +61,6 @@ class WebhookEndpointController {
   @PostMapping("/{endpointId}/disable")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void disable(@AuthenticationPrincipal ApiClient client, @PathVariable UUID endpointId) {
-    endpoints.disable(client.merchantId(), endpointId);
+    endpoints.disable(client.merchantId(), client.actor(), endpointId);
   }
 }

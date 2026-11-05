@@ -51,6 +51,9 @@ payment:
     max-ttl: 7d
   rate-limit:
     requests-per-minute: 600
+  fee:
+    # A simulated fee of 0.7%, not a regulatory value.
+    basis-points: 70
   sweeper:
     cron: "*/15 * * * * *"
   webhook:

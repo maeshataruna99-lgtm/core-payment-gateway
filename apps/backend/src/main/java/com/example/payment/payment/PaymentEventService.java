@@ -2,6 +2,7 @@ package com.example.payment.payment;
 
 import com.example.payment.checkout.CheckoutService;
 import com.example.payment.common.OutboxWriter;
+import com.example.payment.ledger.LedgerService;
 import com.example.payment.payment.PaymentStateMachine.Event;
 import com.example.payment.payment.PaymentStateMachine.State;
 import com.example.payment.payment.PaymentStateMachine.Transition;
@@ -41,6 +42,7 @@ class PaymentEventService {
   private final CheckoutService checkouts;
   private final JdbcClient jdbc;
   private final OutboxWriter outbox;
+  private final LedgerService ledger;
   private final Clock clock;
 
   PaymentEventService(
@@ -48,11 +50,13 @@ class PaymentEventService {
       CheckoutService checkouts,
       JdbcClient jdbc,
       OutboxWriter outbox,
+      LedgerService ledger,
       Clock clock) {
     this.attempts = attempts;
     this.checkouts = checkouts;
     this.jdbc = jdbc;
     this.outbox = outbox;
+    this.ledger = ledger;
     this.clock = clock;
   }
 
@@ -107,6 +111,7 @@ class PaymentEventService {
         recordDiscrepancy(
             attempt.id(), "DOUBLE_PAYMENT", "The checkout was already paid by another attempt");
       }
+      ledger.postPayment(attempt.merchantId(), attempt.id(), attempt.amount(), settled);
     }
     if (transition.to() != from) {
       announce(attempt, settled);

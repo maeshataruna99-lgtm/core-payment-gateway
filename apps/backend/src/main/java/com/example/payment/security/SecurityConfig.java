@@ -58,6 +58,11 @@ public class SecurityConfig {
                 .hasAnyRole("OPERATOR", "ADMIN")
                 .requestMatchers("/api/v1/webhook-endpoints", "/api/v1/webhook-endpoints/**")
                 .hasRole("MERCHANT")
+                .requestMatchers(
+                    HttpMethod.POST, "/api/v1/settlements", "/api/v1/settlements/preview")
+                .hasAnyRole("OPERATOR", "ADMIN")
+                .requestMatchers("/api/v1/audit-events", "/api/v1/audit-events/**")
+                .hasAnyRole("OPERATOR", "ADMIN")
                 // Exists only in the demo profile.
                 .requestMatchers(HttpMethod.POST, "/demo/webhook-receiver")
                 .permitAll()

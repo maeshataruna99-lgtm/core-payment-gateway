@@ -36,6 +36,15 @@ public interface PaymentProvider {
     }
   }
 
+  /** A request to refund part of a payment. */
+  record RefundRequest(UUID refundId, UUID paymentId, long amount) {}
+
+  /** The provider's answer about a refund. */
+  enum RefundOutcome {
+    SUCCEEDED,
+    FAILED
+  }
+
   PaymentMethod method();
 
   boolean supportsChannel(String channelCode);
@@ -43,4 +52,9 @@ public interface PaymentProvider {
   Result initiate(Request request);
 
   Result checkStatus(Request request);
+
+  /** Must be safe to repeat for the same refund ID. A timeout means the outcome is unknown. */
+  RefundOutcome refund(RefundRequest request);
+
+  RefundOutcome checkRefund(RefundRequest request);
 }

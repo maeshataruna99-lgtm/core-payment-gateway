@@ -4,7 +4,7 @@ A portfolio simulator of an Indonesian payment gateway.
 
 **SANDBOX ONLY:** it processes no real funds, connects to no real bank or provider, and must not receive real card numbers, PINs, OTPs, or bank logins. It does not claim PCI DSS, Bank Indonesia, or BI-SNAP compliance, or compatibility with any provider's API.
 
-Status: Phase 4, webhooks and reliability. A simulated QRIS or Virtual Account payment can complete through a signed callback, and merchants receive signed webhooks with retries. Refunds and the ledger arrive in Phase 5, and the dashboard in Phase 7.
+Status: Phase 5, refunds, ledger, and settlement. A simulated payment can run through a signed callback, webhooks, refunds, and a final settlement batch. Reconciliation arrives in Phase 6, and the dashboard in Phase 7.
 
 ## Run the demo
 
@@ -40,6 +40,14 @@ The last two digits of the amount choose how the simulated provider behaves:
 | `02` | The call times out: `UNKNOWN`, then `PENDING` after a status check, within about 15 seconds |
 | `03` | Every call times out: `UNKNOWN` until a simulated answer arrives |
 | Anything else | `PENDING` until a simulated answer arrives or the checkout expires |
+
+## Refunds and settlement
+
+`POST /api/v1/payments/{paymentId}/refunds` refunds part or all of a succeeded payment. A refund amount ending in `01`, `02`, or `03` triggers the same simulated rejection and timeouts as a payment. Otherwise it succeeds at once.
+
+Staff settle a merchant in two steps. `POST /api/v1/settlements/preview` shows gross, fees, refunds, adjustments, and net without saving anything. `POST /api/v1/settlements` finalizes that batch, and needs `"confirm": true` and the preview's net as `expectedNet`. No bank transfer happens.
+
+Staff can read privileged actions at `GET /api/v1/audit-events`, and check their hash chain at `GET /api/v1/audit-events/verification`.
 
 ## Receive webhooks
 

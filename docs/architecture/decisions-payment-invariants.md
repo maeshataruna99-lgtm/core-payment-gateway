@@ -81,4 +81,14 @@ A provider call never reports success, because the state table has no such colum
 
 ## Refund states
 
-A refund moves from `PENDING` to `SUCCEEDED` or `FAILED`. The payment stays `SUCCEEDED`, and its refunded amount is calculated from its refunds.
+A refund moves from `PENDING` to `SUCCEEDED` or `FAILED`. The payment stays `SUCCEEDED`, and its refunded amount is calculated from its refunds. A timed-out refund stays `PENDING` and keeps its reservation until a status check resolves it.
+
+## Ledger and settlement rules
+
+These apply decisions 3 and 4.
+
+- A second success on a checkout posts to a fourth account, `unapplied_funds`. It earns no fee and is never settled, so it can only be refunded.
+- A fee is charged when a payment settles a checkout, and it is not returned by a refund. The rate is rounded half up.
+- Ledger entries are posted when a refund succeeds, not when it is reserved.
+- A settlement batch is final when created, and the preview is not saved.
+- A batch whose net is zero or less is refused. Its lines wait for the next batch.

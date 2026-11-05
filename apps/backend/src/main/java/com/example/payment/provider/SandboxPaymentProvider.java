@@ -42,6 +42,25 @@ abstract class SandboxPaymentProvider implements PaymentProvider {
     return answer(request);
   }
 
+  /** Refund amounts choose the same scenarios, except that anything else succeeds at once. */
+  @Override
+  public RefundOutcome refund(RefundRequest request) {
+    int scenario = (int) (request.amount() % 100);
+    if (scenario == TIMEOUT_ONCE || scenario == TIMEOUT_ALWAYS) {
+      throw new TimeoutException("Simulated provider timeout");
+    }
+    return scenario == REJECT ? RefundOutcome.FAILED : RefundOutcome.SUCCEEDED;
+  }
+
+  @Override
+  public RefundOutcome checkRefund(RefundRequest request) {
+    int scenario = (int) (request.amount() % 100);
+    if (scenario == TIMEOUT_ALWAYS) {
+      throw new TimeoutException("Simulated provider timeout");
+    }
+    return scenario == REJECT ? RefundOutcome.FAILED : RefundOutcome.SUCCEEDED;
+  }
+
   /** The instruction shown to the customer for a pending attempt. */
   abstract Result pending(Request request, String reference);
 

@@ -15,4 +15,9 @@ public record ApiClient(UUID id, UUID merchantId, Role role) {
     OPERATOR,
     ADMIN
   }
+
+  /** How this client is named in audit records. */
+  public String actor() {
+    return role.name().toLowerCase(java.util.Locale.ROOT) + ":" + id;
+  }
 }

@@ -1,6 +1,6 @@
 # Threat Model
 
-Status: Draft, 2026-11-05. The controls for client-set status, double payment, duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout and payment. The controls for forged and replayed callbacks, SSRF, webhook spoofing, and sandbox endpoint exposure exist. Webhook secrets are encrypted at rest. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
+Status: Draft, 2026-11-05. The controls for client-set status, double payment, duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout and payment. The controls for forged and replayed callbacks, SSRF, webhook spoofing, and sandbox endpoint exposure exist. Webhook secrets are encrypted at rest. The controls for over-refund, privilege misuse, and tampered records exist: the database rejects edits to the ledger, final settlements, and audit log, and a hash chain reveals an edit that bypasses this. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
 
 ## Assets
 

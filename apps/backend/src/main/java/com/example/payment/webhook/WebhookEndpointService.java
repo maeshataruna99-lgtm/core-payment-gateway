@@ -1,5 +1,6 @@
 package com.example.payment.webhook;
 
+import com.example.payment.audit.AuditLog;
 import com.example.payment.common.DomainException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.security.SecureRandom;
@@ -28,19 +29,31 @@ import org.springframework.transaction.annotation.Transactional;
 class WebhookEndpointService {
 
   static final Set<String> EVENT_TYPES =
-      Set.of("payment.succeeded", "payment.failed", "payment.expired");
+      Set.of(
+          "payment.succeeded",
+          "payment.failed",
+          "payment.expired",
+          "refund.succeeded",
+          "refund.failed",
+          "settlement.finalized");
 
   private final JdbcClient jdbc;
   private final SecretCipher cipher;
   private final WebhookUrlPolicy urlPolicy;
+  private final AuditLog audit;
   private final Clock clock;
   private final SecureRandom random = new SecureRandom();
 
   WebhookEndpointService(
-      JdbcClient jdbc, SecretCipher cipher, WebhookUrlPolicy urlPolicy, Clock clock) {
+      JdbcClient jdbc,
+      SecretCipher cipher,
+      WebhookUrlPolicy urlPolicy,
+      AuditLog audit,
+      Clock clock) {
     this.jdbc = jdbc;
     this.cipher = cipher;
     this.urlPolicy = urlPolicy;
+    this.audit = audit;
     this.clock = clock;
   }
 
@@ -50,7 +63,7 @@ class WebhookEndpointService {
       UUID id, String url, List<String> events, boolean active, Instant createdAt, String secret) {}
 
   @Transactional
-  public Endpoint register(UUID merchantId, String url, List<String> events) {
+  public Endpoint register(UUID merchantId, String actor, String url, List<String> events) {
     urlPolicy
         .rejectionReason(url)
         .ifPresent(reason -> {
@@ -77,6 +90,7 @@ class WebhookEndpointService {
           .params(id, event)
           .update();
     }
+    audit.record(actor, "webhook.endpoint.registered", "webhook_endpoint", id.toString());
     return new Endpoint(id, url, unique, true, now, secret);
   }
 
@@ -102,7 +116,7 @@ class WebhookEndpointService {
   }
 
   @Transactional
-  public void disable(UUID merchantId, UUID endpointId) {
+  public void disable(UUID merchantId, String actor, UUID endpointId) {
     int changed =
         jdbc.sql("UPDATE webhook_endpoints SET active = false WHERE id = ? AND merchant_id = ?")
             .params(endpointId, merchantId)
@@ -110,5 +124,6 @@ class WebhookEndpointService {
     if (changed == 0) {
       throw new DomainException(HttpStatus.NOT_FOUND, "NOT_FOUND", "Endpoint not found.");
     }
+    audit.record(actor, "webhook.endpoint.disabled", "webhook_endpoint", endpointId.toString());
   }
 }
