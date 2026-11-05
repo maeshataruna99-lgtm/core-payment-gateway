@@ -1,5 +1,5 @@
 # Builds the backend without needing Java on the host. Tests run in CI, not here.
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /src
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
