@@ -1,6 +1,7 @@
 package com.example.payment.common;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -9,10 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -45,6 +49,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     return respond(status, "VALIDATION_FAILED", "Request validation failed.", fields);
   }
 
+  /** Spring raises this instead when a handler validates a header as well as a body. */
+  @Override
+  protected ResponseEntity<Object> handleHandlerMethodValidationException(
+      HandlerMethodValidationException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    List<ApiError.FieldError> fields =
+        ex.getParameterValidationResults().stream()
+            .flatMap(GlobalExceptionHandler::fieldErrors)
+            .toList();
+    return respond(status, "VALIDATION_FAILED", "Request validation failed.", fields);
+  }
+
+  private static Stream<ApiError.FieldError> fieldErrors(ParameterValidationResult result) {
+    if (result instanceof ParameterErrors errors) {
+      return errors.getFieldErrors().stream()
+          .map(e -> new ApiError.FieldError(e.getField(), e.getDefaultMessage()));
+    }
+    String parameter = result.getMethodParameter().getParameterName();
+    return result.getResolvableErrors().stream()
+        .map(e -> new ApiError.FieldError(parameter, e.getDefaultMessage()));
+  }
+
   @Override
   protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex, Object body, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -52,6 +80,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         status instanceof HttpStatus known ? known.getReasonPhrase() : "Request failed.";
     String code = status instanceof HttpStatus known ? known.name() : "REQUEST_FAILED";
     return respond(status, code, reason, List.of());
+  }
+
+  /** Handles a request rejected by a business rule. */
+  @ExceptionHandler(DomainException.class)
+  public ResponseEntity<Object> handleDomain(DomainException ex) {
+    List<ApiError.FieldError> fields =
+        ex.field() == null
+            ? List.of()
+            : List.of(new ApiError.FieldError(ex.field(), ex.getMessage()));
+    return respond(ex.status(), ex.code(), ex.getMessage(), fields);
   }
 
   /** Handles anything no other handler covers. */

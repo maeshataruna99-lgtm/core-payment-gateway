@@ -1,12 +1,25 @@
 spring:
   application:
     name: payment-gateway
+  autoconfigure:
+    # API keys are the only login, so Spring's generated default user must not exist.
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/paygate}
     username: ${DB_USERNAME:paygate}
     password: ${DB_PASSWORD:}
   flyway:
     enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  jackson:
+    deserialization:
+      # Rejects extra fields, such as a client-supplied payment status.
+      fail-on-unknown-properties: true
 
 management:
   endpoints:
@@ -21,3 +34,15 @@ logging:
   structured:
     format:
       console: ecs
+
+payment:
+  checkout:
+    # Has no default: the application refuses to start without a secret.
+    token-secret: ${CHECKOUT_TOKEN_SECRET:}
+    base-url: ${CHECKOUT_BASE_URL:http://localhost:5173}
+    # A simulated limit, not a regulatory value.
+    max-amount: 100000000
+    default-ttl: 1h
+    max-ttl: 7d
+  rate-limit:
+    requests-per-minute: 600

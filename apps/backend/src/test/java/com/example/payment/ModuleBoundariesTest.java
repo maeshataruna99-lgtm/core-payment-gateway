@@ -28,7 +28,22 @@ class ModuleBoundariesTest {
         .resideInAPackage("com.example.payment.common..")
         .should()
         .dependOnClassesThat()
-        .resideInAnyPackage("com.example.payment.config..")
+        .resideInAnyPackage(
+            "com.example.payment.config..",
+            "com.example.payment.security..",
+            "com.example.payment.merchant..",
+            "com.example.payment.checkout..")
+        .check(classes);
+  }
+
+  @Test
+  void entitiesStayInsideTheirModule() {
+    noClasses()
+        .that()
+        .resideOutsideOfPackage("com.example.payment.checkout..")
+        .should()
+        .dependOnClassesThat()
+        .haveSimpleName("CheckoutSession")
         .check(classes);
   }
 }

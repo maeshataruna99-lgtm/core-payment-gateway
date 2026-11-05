@@ -12,3 +12,8 @@ updates:
     directory: /apps/backend
     schedule:
       interval: weekly
+    # The project stays on Java 21 LTS until a decision changes it. Tags encode the JDK version,
+    # so Dependabot sees a newer JDK as an ordinary update.
+    ignore:
+      - dependency-name: eclipse-temurin
+      - dependency-name: maven

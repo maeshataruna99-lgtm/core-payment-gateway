@@ -1,6 +1,6 @@
 # Threat Model
 
-Status: Draft, 2026-11-05. Only the secret leak controls from Phase 1 exist so far, and log redaction is limited to returning no internal error detail to clients.
+Status: Draft, 2026-11-05. The controls for duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
 
 ## Assets
 
@@ -44,5 +44,7 @@ Real payment fraud, PCI DSS scope, host and network hardening, and attackers wit
 
 ## Open items
 
-- Choose the JWT or session design in Phase 2.
+- API clients use API keys, stored only as SHA-256 hashes. Choose the operator dashboard login in Phase 7.
+- Rate limits count per process and per socket address, so they would need rework behind a proxy.
+- A customer token never expires by itself. It only reads one checkout, and the checkout's status shows its expiry.
 - Review this model again in Phase 8.

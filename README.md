@@ -4,7 +4,7 @@ A portfolio simulator of an Indonesian payment gateway.
 
 **SANDBOX ONLY:** it processes no real funds, connects to no real bank or provider, and must not receive real card numbers, PINs, OTPs, or bank logins. It does not claim PCI DSS, Bank Indonesia, or BI-SNAP compliance, or compatibility with any provider's API.
 
-Status: Phase 1, foundation. No payment features exist yet.
+Status: Phase 2, merchant and checkout. Customers cannot pay yet, because the payment flow arrives in Phase 3.
 
 ## Run the demo
 
@@ -21,6 +21,14 @@ When it has started:
 | http://localhost:8080/actuator/health | Health check |
 | http://localhost:8080/swagger-ui.html | API documentation |
 | http://localhost:8080/v3/api-docs | OpenAPI contract |
+
+The demo seeds a synthetic merchant, Toko Contoh, with a dummy API key. To create a simulated checkout:
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/checkout-sessions -H "X-Api-Key: sandbox-demo-merchant-key" -H "Idempotency-Key: demo-order-0001" -H "Content-Type: application/json" -d '{"merchantOrderId":"ORD-1","amount":250000,"currency":"IDR"}'
+```
+
+Run it again to see the same checkout returned with `Idempotency-Replayed: true`. Change the amount but keep the key to see a `409`.
 
 To stop the demo and delete its local database:
 
