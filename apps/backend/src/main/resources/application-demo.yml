@@ -3,3 +3,11 @@ payment:
   demo:
     merchant-api-key: ${DEMO_MERCHANT_API_KEY}
     operator-api-key: ${DEMO_OPERATOR_API_KEY}
+  sandbox:
+    callback-secret: ${PROVIDER_CALLBACK_SECRET}
+  webhook:
+    # Short, so a retry is visible during a demo.
+    base-delay: 2s
+    # Decision 9: the SSRF exemption exists only in this profile.
+    allowed-hosts:
+      - localhost

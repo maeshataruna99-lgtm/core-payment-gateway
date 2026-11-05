@@ -4,6 +4,17 @@ payment:
     base-url: http://checkout.test
   rate-limit:
     requests-per-minute: 100000
+  sandbox:
+    callback-secret: test-only-callback-secret
   sweeper:
-    # Tests run the sweeper directly, so results do not depend on timing.
+    # Tests run scheduled jobs directly, so results do not depend on timing.
     cron: "-"
+  webhook:
+    encryption-key: test-only-encryption-key-with-32-characters
+    base-delay: 0s
+    max-automatic-attempts: 3
+    max-total-attempts: 4
+    allowed-hosts:
+      - localhost
+    publish-cron: "-"
+    deliver-cron: "-"

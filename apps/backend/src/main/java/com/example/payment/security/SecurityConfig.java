@@ -51,8 +51,16 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/payments/*")
                 .permitAll()
+                // Authenticated by its HMAC signature, and absent outside the sandbox profiles.
+                .requestMatchers(HttpMethod.POST, "/api/v1/sandbox/provider-callbacks/*")
+                .permitAll()
                 .requestMatchers("/api/v1/sandbox/**")
                 .hasAnyRole("OPERATOR", "ADMIN")
+                .requestMatchers("/api/v1/webhook-endpoints", "/api/v1/webhook-endpoints/**")
+                .hasRole("MERCHANT")
+                // Exists only in the demo profile.
+                .requestMatchers(HttpMethod.POST, "/demo/webhook-receiver")
+                .permitAll()
                 .anyRequest()
                 .authenticated())
         .exceptionHandling(e ->

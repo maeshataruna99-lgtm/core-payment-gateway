@@ -34,7 +34,19 @@ class ModuleBoundariesTest {
             "com.example.payment.merchant..",
             "com.example.payment.checkout..",
             "com.example.payment.payment..",
-            "com.example.payment.provider..")
+            "com.example.payment.provider..",
+            "com.example.payment.webhook..")
+        .check(classes);
+  }
+
+  @Test
+  void paymentRulesDoNotDependOnWebhooks() {
+    noClasses()
+        .that()
+        .resideInAPackage("com.example.payment.payment..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.example.payment.webhook..")
         .check(classes);
   }
 

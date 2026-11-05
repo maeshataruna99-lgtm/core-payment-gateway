@@ -1,10 +1,11 @@
 #!/bin/sh
-# Purpose: Starts the local demo and runs a simulated payment from checkout to paid.
-# Why: It proves the documented startup and payment lifecycle work from a clean checkout.
-# Prerequisites: Docker with Compose, and curl. Java is not needed.
+# Purpose: Starts the local demo and runs a simulated payment from checkout to delivered webhook.
+# Why: It proves the startup, payment lifecycle, replay protection, and webhook retry from a
+#      clean checkout.
+# Prerequisites: Docker with Compose, curl, and openssl. Java is not needed.
 # How to run: sh scripts/smoke-test.sh
 # Inputs: BACKEND_PORT, optional, defaults to 8080.
-#         DEMO_MERCHANT_API_KEY and DEMO_OPERATOR_API_KEY, optional, must match the running demo.
+#         DEMO_MERCHANT_API_KEY and PROVIDER_CALLBACK_SECRET, optional, must match the demo.
 #         KEEP_RUNNING=1 leaves the demo running.
 # Expected output: "Smoke test passed" and exit code 0.
 # Failure behavior: Prints container logs and exits non-zero.
@@ -15,7 +16,8 @@ set -eu
 compose_file="$(dirname "$0")/../infra/docker/compose.yaml"
 base="http://localhost:${BACKEND_PORT:-8080}"
 merchant_key="${DEMO_MERCHANT_API_KEY:-sandbox-demo-merchant-key}"
-operator_key="${DEMO_OPERATOR_API_KEY:-sandbox-demo-operator-key}"
+callback_secret="${PROVIDER_CALLBACK_SECRET:-sandbox-demo-callback-secret}"
+demo_merchant_id="00000000-0000-4000-8000-000000000001"
 checkouts="$base/api/v1/checkout-sessions"
 body='{"merchantOrderId":"SMOKE-1","amount":250000,"currency":"IDR"}'
 
@@ -66,6 +68,12 @@ id="$(checkout_id "$first")"
   || fail "the merchant could not read its checkout"
 [ "$(status_of "$checkouts/$id")" = "404" ] || fail "a checkout was readable without credentials"
 
+curl -fsS -X POST "$base/api/v1/webhook-endpoints" \
+  -H "X-Api-Key: $merchant_key" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"http://localhost:8080/demo/webhook-receiver?failTimes=1","events":["payment.succeeded"]}' \
+  > /dev/null || fail "could not register a webhook endpoint"
+
 payment="$(curl -fsS -X POST "$base/api/v1/payments" \
   -H "X-Api-Key: $merchant_key" \
   -H "Idempotency-Key: smoke-test-payment" \
@@ -78,10 +86,30 @@ case "$payment" in
   *) fail "the payment did not start as pending: $payment" ;;
 esac
 
-curl -fsS -X POST "$base/api/v1/sandbox/payments/$payment_id/events" \
-  -H "X-Api-Key: $operator_key" \
-  -H "Content-Type: application/json" \
-  -d '{"outcome":"SUCCESS"}' > /dev/null || fail "could not simulate the provider's answer"
+reference="$(printf '%s' "$payment" | sed -n 's/.*"providerReference":"\([^"]*\)".*/\1/p')"
+callback="{\"eventId\":\"smoke-event-1\",\"paymentId\":\"$payment_id\",\"merchantId\":\"$demo_merchant_id\",\"providerReference\":\"$reference\",\"outcome\":\"SUCCESS\",\"amount\":250000,\"currency\":\"IDR\"}"
+send_callback() {
+  timestamp="$(date +%s)"
+  signature="$(printf '%s.%s' "$timestamp" "$1" | openssl dgst -sha256 -hmac "$2" | sed 's/^.* //')"
+  curl -s -X POST "$base/api/v1/sandbox/provider-callbacks/sandbox" \
+    -H "X-Provider-Timestamp: $timestamp" \
+    -H "X-Provider-Signature: $signature" \
+    -H "Content-Type: application/json" \
+    -d "$1"
+}
+
+case "$(send_callback "$callback" wrong-secret)" in
+  *INVALID_SIGNATURE*) ;;
+  *) fail "a callback with a wrong signature was not rejected" ;;
+esac
+case "$(send_callback "$callback" "$callback_secret")" in
+  *'"duplicate":false'*) ;;
+  *) fail "the signed callback was not accepted" ;;
+esac
+case "$(send_callback "$callback" "$callback_secret")" in
+  *'"duplicate":true'*) ;;
+  *) fail "a replayed callback was not detected" ;;
+esac
 
 paid="$(curl -fsS -H "X-Api-Key: $merchant_key" "$base/api/v1/payments/$payment_id")" \
   || fail "could not read the payment"
@@ -96,4 +124,25 @@ case "$checkout" in
   *) fail "the checkout was not paid: $checkout" ;;
 esac
 
-echo "Smoke test passed: checkout $id, payment $payment_id"
+case "$paid" in
+  *'"event":"CALLBACK_SUCCESS"'*'"event":"CALLBACK_SUCCESS"'*) fail "a replay changed the payment" ;;
+esac
+
+# The receiver fails the first call on purpose, so delivery needs one retry.
+delivery=""
+tries=0
+while [ "$tries" -lt 30 ]; do
+  delivery="$(curl -fsS -H "X-Api-Key: $merchant_key" "$base/api/v1/webhook-deliveries")" \
+    || fail "could not read webhook deliveries"
+  case "$delivery" in
+    *'"state":"DELIVERED"'*) break ;;
+  esac
+  tries=$((tries + 1))
+  sleep 2
+done
+case "$delivery" in
+  *'"state":"DELIVERED"'*'"attempts":2'* | *'"attempts":2'*'"state":"DELIVERED"'*) ;;
+  *) fail "the webhook was not delivered on its second attempt: $delivery" ;;
+esac
+
+echo "Smoke test passed: checkout $id, payment $payment_id, webhook delivered after one retry"

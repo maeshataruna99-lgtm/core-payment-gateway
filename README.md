@@ -4,7 +4,7 @@ A portfolio simulator of an Indonesian payment gateway.
 
 **SANDBOX ONLY:** it processes no real funds, connects to no real bank or provider, and must not receive real card numbers, PINs, OTPs, or bank logins. It does not claim PCI DSS, Bank Indonesia, or BI-SNAP compliance, or compatibility with any provider's API.
 
-Status: Phase 3, payment orchestration. A simulated QRIS or Virtual Account payment can complete through the API. Signed callbacks and webhooks arrive in Phase 4, and the dashboard in Phase 7.
+Status: Phase 4, webhooks and reliability. A simulated QRIS or Virtual Account payment can complete through a signed callback, and merchants receive signed webhooks with retries. Refunds and the ledger arrive in Phase 5, and the dashboard in Phase 7.
 
 ## Run the demo
 
@@ -30,7 +30,7 @@ curl -i -X POST http://localhost:8080/api/v1/checkout-sessions -H "X-Api-Key: sa
 
 Run it again to see the same checkout returned with `Idempotency-Replayed: true`. Change the amount but keep the key to see a `409`.
 
-Then start a payment with `POST /api/v1/payments`. Staff finish it with `POST /api/v1/sandbox/payments/{paymentId}/events`, which simulates the provider's answer. [smoke-test.sh](scripts/smoke-test.sh) runs the whole flow, and the demo operator key is `sandbox-demo-operator-key`.
+Then start a payment with `POST /api/v1/payments`. It finishes through a signed callback to `POST /api/v1/sandbox/provider-callbacks/sandbox`, or through `POST /api/v1/sandbox/payments/{paymentId}/events`, which lets staff simulate the provider's answer. [smoke-test.sh](scripts/smoke-test.sh) runs the whole flow, including a replayed callback and a webhook retry. The demo operator key is `sandbox-demo-operator-key`.
 
 The last two digits of the amount choose how the simulated provider behaves:
 
@@ -40,6 +40,16 @@ The last two digits of the amount choose how the simulated provider behaves:
 | `02` | The call times out: `UNKNOWN`, then `PENDING` after a status check, within about 15 seconds |
 | `03` | Every call times out: `UNKNOWN` until a simulated answer arrives |
 | Anything else | `PENDING` until a simulated answer arrives or the checkout expires |
+
+## Receive webhooks
+
+Register a URL with `POST /api/v1/webhook-endpoints`. The response shows the signing secret once. Delivery is at-least-once, so deduplicate on `X-PayGate-Event-Id`.
+
+To verify a webhook, read `t` and `v1` from the `X-PayGate-Signature` header (`t=<epoch seconds>,v1=<hex>`). Compute the HMAC-SHA256 of `t.body` with your secret, compare it with `v1`, and reject an old `t`.
+
+A failed delivery retries with exponential backoff, up to 5 attempts. `POST /api/v1/webhook-deliveries/{id}/retry` retries a failed one, up to 10 attempts in total. Only HTTPS URLs on public addresses are allowed, except for `localhost` in the demo. The demo's test receiver is `http://localhost:8080/demo/webhook-receiver?failTimes=1`, which fails the given number of times per event.
+
+## Stop the demo
 
 To stop the demo and delete its local database:
 

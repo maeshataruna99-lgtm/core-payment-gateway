@@ -1,6 +1,7 @@
 package com.example.payment.payment;
 
 import com.example.payment.checkout.CheckoutService;
+import com.example.payment.common.OutboxWriter;
 import com.example.payment.payment.PaymentStateMachine.Event;
 import com.example.payment.payment.PaymentStateMachine.State;
 import com.example.payment.payment.PaymentStateMachine.Transition;
@@ -9,6 +10,8 @@ import com.example.payment.provider.PaymentProvider;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -37,13 +40,19 @@ class PaymentEventService {
   private final PaymentAttemptRepository attempts;
   private final CheckoutService checkouts;
   private final JdbcClient jdbc;
+  private final OutboxWriter outbox;
   private final Clock clock;
 
   PaymentEventService(
-      PaymentAttemptRepository attempts, CheckoutService checkouts, JdbcClient jdbc, Clock clock) {
+      PaymentAttemptRepository attempts,
+      CheckoutService checkouts,
+      JdbcClient jdbc,
+      OutboxWriter outbox,
+      Clock clock) {
     this.attempts = attempts;
     this.checkouts = checkouts;
     this.jdbc = jdbc;
+    this.outbox = outbox;
     this.clock = clock;
   }
 
@@ -90,13 +99,43 @@ class PaymentEventService {
       recordDiscrepancy(
           attempt.id(), "CONTRADICTORY_EVENT", event + " arrived after a recorded success");
     }
+    boolean settled = false;
     if (transition.to() == State.SUCCEEDED && from != State.SUCCEEDED) {
       attempt.recordPaidMethod(paidMethod != null ? paidMethod : attempt.method());
-      if (!checkouts.markPaid(attempt.checkoutId(), attempt.id())) {
+      settled = checkouts.markPaid(attempt.checkoutId(), attempt.id());
+      if (!settled) {
         recordDiscrepancy(
             attempt.id(), "DOUBLE_PAYMENT", "The checkout was already paid by another attempt");
       }
     }
+    if (transition.to() != from) {
+      announce(attempt, settled);
+    }
+  }
+
+  /** Announces a final state. The outbox row commits together with the state change. */
+  private void announce(PaymentAttempt attempt, boolean settled) {
+    String type =
+        switch (attempt.state()) {
+          case SUCCEEDED -> "payment.succeeded";
+          case FAILED -> "payment.failed";
+          case EXPIRED -> "payment.expired";
+          case CREATED, PENDING, UNKNOWN -> null;
+        };
+    if (type == null) {
+      return;
+    }
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("paymentId", attempt.id());
+    payload.put("checkoutId", attempt.checkoutId());
+    payload.put("status", attempt.state());
+    payload.put("method", attempt.method());
+    payload.put("paidMethod", attempt.paidMethod());
+    payload.put("amount", attempt.amount());
+    payload.put("currency", attempt.currency());
+    // False for a second success on one checkout, which must be refunded.
+    payload.put("settlesCheckout", settled);
+    outbox.write(type, attempt.merchantId(), payload);
   }
 
   private void recordEvent(UUID attemptId, String event, State from, State to, String actor) {

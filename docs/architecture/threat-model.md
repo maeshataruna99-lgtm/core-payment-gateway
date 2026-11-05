@@ -1,6 +1,6 @@
 # Threat Model
 
-Status: Draft, 2026-11-05. The controls for client-set status, double payment, duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout and payment. The simulated answer endpoint exists only in the demo and test profiles, but signed callbacks do not exist yet. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
+Status: Draft, 2026-11-05. The controls for client-set status, double payment, duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout and payment. The controls for forged and replayed callbacks, SSRF, webhook spoofing, and sandbox endpoint exposure exist. Webhook secrets are encrypted at rest. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
 
 ## Assets
 
@@ -46,5 +46,6 @@ Real payment fraud, PCI DSS scope, host and network hardening, and attackers wit
 
 - API clients use API keys, stored only as SHA-256 hashes. Choose the operator dashboard login in Phase 7.
 - Rate limits count per process and per socket address, so they would need rework behind a proxy.
+- The URL check runs before each send, but the HTTP client resolves DNS again, so a short DNS rebinding window remains. Redirects are not followed.
 - A customer token never expires by itself. It only reads one checkout, and the checkout's status shows its expiry.
 - Review this model again in Phase 8.

@@ -16,6 +16,11 @@ spring:
       ddl-auto: validate
     properties:
       hibernate.jdbc.time_zone: UTC
+  task:
+    scheduling:
+      pool:
+        # So slow webhook sends do not delay the payment sweeper.
+        size: 3
   jackson:
     deserialization:
       # Rejects extra fields, such as a client-supplied payment status.
@@ -48,3 +53,12 @@ payment:
     requests-per-minute: 600
   sweeper:
     cron: "*/15 * * * * *"
+  webhook:
+    # Has no default: the application refuses to start without a key.
+    encryption-key: ${WEBHOOK_ENCRYPTION_KEY:}
+    base-delay: 30s
+    max-automatic-attempts: 5
+    max-total-attempts: 10
+    allowed-hosts: []
+    publish-cron: "*/2 * * * * *"
+    deliver-cron: "*/2 * * * * *"

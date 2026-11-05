@@ -27,6 +27,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-paygate_local_only}
       SPRING_PROFILES_ACTIVE: demo
       CHECKOUT_TOKEN_SECRET: ${CHECKOUT_TOKEN_SECRET:-local-only-dummy-value-for-the-demo}
+      WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY:-local-only-dummy-value-for-the-demo}
+      PROVIDER_CALLBACK_SECRET: ${PROVIDER_CALLBACK_SECRET:-sandbox-demo-callback-secret}
       DEMO_MERCHANT_API_KEY: ${DEMO_MERCHANT_API_KEY:-sandbox-demo-merchant-key}
       DEMO_OPERATOR_API_KEY: ${DEMO_OPERATOR_API_KEY:-sandbox-demo-operator-key}
     ports:
