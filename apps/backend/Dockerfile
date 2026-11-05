@@ -6,7 +6,7 @@ RUN mvn -B -q dependency:go-offline
 COPY src src
 RUN mvn -B -q package -DskipTests -Dspotless.check.skip=true
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 RUN useradd --system --no-create-home app
 COPY --from=build /src/target/payment-gateway-*.jar /app/app.jar
 USER app
