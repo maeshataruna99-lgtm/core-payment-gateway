@@ -26,6 +26,7 @@ services:
       DB_USERNAME: paygate
       DB_PASSWORD: ${DB_PASSWORD:-paygate_local_only}
       SPRING_PROFILES_ACTIVE: demo
+      CHECKOUT_BASE_URL: http://localhost:${FRONTEND_PORT:-5173}
       CHECKOUT_TOKEN_SECRET: ${CHECKOUT_TOKEN_SECRET:-local-only-dummy-value-for-the-demo}
       WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY:-local-only-dummy-value-for-the-demo}
       PROVIDER_CALLBACK_SECRET: ${PROVIDER_CALLBACK_SECRET:-sandbox-demo-callback-secret}
@@ -39,6 +40,24 @@ services:
       timeout: 3s
       retries: 30
       start_period: 10s
+
+  frontend:
+    build:
+      context: ../../apps/frontend
+      args:
+        # Dummy keys for the demo's sign-in shortcuts, built into this image only.
+        VITE_DEMO_MERCHANT_KEY: ${DEMO_MERCHANT_API_KEY:-sandbox-demo-merchant-key}
+        VITE_DEMO_OPERATOR_KEY: ${DEMO_OPERATOR_API_KEY:-sandbox-demo-operator-key}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   postgres-data:

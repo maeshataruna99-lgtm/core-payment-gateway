@@ -4,7 +4,7 @@ A portfolio simulator of an Indonesian payment gateway.
 
 **SANDBOX ONLY:** it processes no real funds, connects to no real bank or provider, and must not receive real card numbers, PINs, OTPs, or bank logins. It does not claim PCI DSS, Bank Indonesia, or BI-SNAP compliance, or compatibility with any provider's API.
 
-Status: Phase 6, reconciliation. All 10 REST use cases work through the API: a simulated payment can run through a signed callback, webhooks, refunds, a final settlement batch, and reconciliation. The dashboard arrives in Phase 7.
+Status: Phase 7, user interface. All 10 REST use cases work, and the whole flow can be run from the dashboard and checkout pages. Hardening and release materials arrive in Phase 8.
 
 ## Run the demo
 
@@ -18,6 +18,7 @@ When it has started:
 
 | URL | Content |
 |---|---|
+| http://localhost:5173 | Dashboard and checkout. The sign-in page has demo buttons. |
 | http://localhost:8080/actuator/health | Health check |
 | http://localhost:8080/swagger-ui.html | API documentation |
 | http://localhost:8080/v3/api-docs | OpenAPI contract |
@@ -87,6 +88,18 @@ cd apps/backend && ./mvnw verify
 cd apps/backend && ./mvnw spotless:apply
 ```
 
+The frontend uses Node 24, Vue 3, and [shadcn-vue](https://www.shadcn-vue.com). To check it:
+
+```bash
+cd apps/frontend && npm ci && npm run typecheck && npm test && npm run build
+```
+
+To run it in development, with the backend on port 8080:
+
+```bash
+cd apps/frontend && npm run dev
+```
+
 To check the whole startup from a clean checkout. This deletes the demo's database when it finishes:
 
 ```bash
@@ -98,6 +111,7 @@ sh scripts/smoke-test.sh
 | Path | Content |
 |---|---|
 | `apps/backend` | Spring Boot application |
+| `apps/frontend` | Vue dashboard and checkout |
 | `infra/docker` | Docker Compose demo |
 | `scripts` | Developer scripts |
 | `docs` | Architecture, research, scope, design, and glossary |

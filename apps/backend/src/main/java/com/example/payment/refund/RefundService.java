@@ -178,6 +178,22 @@ public class RefundService {
     return new RefundList(refundable, items);
   }
 
+  /** Completed refund totals. {@code amount} is whole rupiah. */
+  public record RefundStats(long count, long amount) {}
+
+  /** Staff see every merchant unless they name one. A merchant only sees its own. */
+  public RefundStats stats(ApiClient client, UUID merchantId) {
+    UUID scope = client.role() == ApiClient.Role.MERCHANT ? client.merchantId() : merchantId;
+    return jdbc.sql(
+            """
+            SELECT count(*) AS count, coalesce(sum(amount), 0) AS amount FROM refunds
+            WHERE state = 'SUCCEEDED' AND (?::uuid IS NULL OR merchant_id = ?)
+            """)
+        .params(scope, scope)
+        .query((rs, row) -> new RefundStats(rs.getLong("count"), rs.getLong("amount")))
+        .single();
+  }
+
   /** Asks the provider about refunds whose outcome is still unknown. */
   @Scheduled(cron = "${payment.sweeper.cron}")
   public void resolvePending() {

@@ -233,7 +233,23 @@ public class PaymentService {
         attempt.createdAt(),
         attempt.updatedAt(),
         siblings,
-        internal ? timeline(attempt.id()) : null);
+        internal ? timeline(attempt.id()) : null,
+        internal ? discrepancies(attempt.id()) : null);
+  }
+
+  private List<PaymentResponse.DiscrepancyEntry> discrepancies(UUID attemptId) {
+    return jdbc.sql(
+            """
+            SELECT type, detail, created_at FROM payment_discrepancies
+            WHERE attempt_id = ? ORDER BY created_at
+            """)
+        .param(attemptId)
+        .query((rs, row) ->
+            new PaymentResponse.DiscrepancyEntry(
+                rs.getString("type"),
+                rs.getString("detail"),
+                rs.getTimestamp("created_at").toInstant()))
+        .list();
   }
 
   private List<PaymentResponse.TimelineEntry> timeline(UUID attemptId) {

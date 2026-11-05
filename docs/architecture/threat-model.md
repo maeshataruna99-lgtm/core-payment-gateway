@@ -44,7 +44,9 @@ Real payment fraud, PCI DSS scope, host and network hardening, and attackers wit
 
 ## Open items
 
-- API clients use API keys, stored only as SHA-256 hashes. Choose the operator dashboard login in Phase 7.
+- API clients use API keys, stored only as SHA-256 hashes. The dashboard signs in with the same keys and keeps the key in `sessionStorage`, where a script injection could read it. A strict Content-Security-Policy limits that, and an HttpOnly session cookie is needed before the dashboard holds a real credential.
+- The demo image builds its dummy keys into its JavaScript, so anyone who can open the demo can act as its operator. A build without those values has no such shortcut.
+- The rate limit sees the frontend proxy as one address for browser traffic.
 - Rate limits count per process and per socket address, so they would need rework behind a proxy.
 - The URL check runs before each send, but the HTTP client resolves DNS again, so a short DNS rebinding window remains. Redirects are not followed.
 - A customer token never expires by itself. It only reads one checkout, and the checkout's status shows its expiry.

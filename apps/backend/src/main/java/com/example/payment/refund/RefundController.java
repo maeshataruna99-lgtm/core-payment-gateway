@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -45,6 +46,13 @@ class RefundController {
     return ResponseEntity.status(201)
         .header("Idempotency-Replayed", String.valueOf(created.replayed()))
         .body(created.refund());
+  }
+
+  @Operation(summary = "Read refund totals", security = @SecurityRequirement(name = "apiKey"))
+  @GetMapping("/api/v1/refund-stats")
+  RefundService.RefundStats stats(
+      @AuthenticationPrincipal ApiClient client, @RequestParam(required = false) UUID merchantId) {
+    return refunds.stats(client, merchantId);
   }
 
   @Operation(summary = "List a payment's refunds", security = @SecurityRequirement(name = "apiKey"))

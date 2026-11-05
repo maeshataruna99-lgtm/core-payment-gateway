@@ -19,6 +19,7 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CheckoutResponse(
     UUID checkoutId,
+    String merchantName,
     String merchantOrderId,
     long amount,
     String currency,

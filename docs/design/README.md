@@ -18,4 +18,11 @@ To view them, open the [PayGate Sandbox Design canvas](https://claude.ai/artifac
 | `Settlement.dc.html` | Settlement and reconciliation |
 | `Settings.dc.html` | Sandbox settings |
 
-The screens follow the visual patterns of [shadcn/ui](https://github.com/shadcn-ui/ui), recreated in HTML. No shadcn/ui code is installed.
+The screens follow the visual patterns of [shadcn/ui](https://github.com/shadcn-ui/ui), recreated in HTML. The application itself uses shadcn-vue.
+
+The application differs from this mock in these ways:
+
+- Pages poll the API every 3 to 5 seconds, not the SSE shown in the architecture diagram. Polling works with the API key header and needs no extra server code.
+- The settings page lists the simulated provider's scenarios. It has no latency control or scenario selector, because scenarios are chosen by the amount on the checkout demo page.
+- The refund event names are `refund.succeeded` and `refund.failed`.
+- A settlement has no draft status. The preview is the draft.

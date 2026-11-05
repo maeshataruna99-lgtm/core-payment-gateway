@@ -43,6 +43,6 @@ A reviewer can follow the demo script in 5 to 10 minutes and explain the payment
 
 Payment rules are in [decisions-payment-invariants.md](../architecture/decisions-payment-invariants.md). Where that document and the blueprint differ, that document applies.
 
-## Open question
+## Frontend stack
 
-The blueprint suggests Vue 3, while shadcn/ui, used as the reference for the mock, is a React library. The frontend stack must be chosen before frontend work starts.
+The frontend uses Vue 3, TypeScript, and shadcn-vue, chosen on 2026-11-05. shadcn-vue is a community port of shadcn/ui, the reference for the mock.

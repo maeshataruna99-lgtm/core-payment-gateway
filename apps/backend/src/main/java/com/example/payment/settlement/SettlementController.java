@@ -5,10 +5,13 @@ import com.example.payment.merchant.ApiClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -70,6 +74,16 @@ class SettlementController {
     return ResponseEntity.created(URI.create("/api/v1/settlements/" + result.settlement().id()))
         .header("Idempotency-Replayed", String.valueOf(result.replayed()))
         .body(result.settlement());
+  }
+
+  @Operation(summary = "List final settlements", security = @SecurityRequirement(name = "apiKey"))
+  @GetMapping
+  List<SettlementService.Settlement> list(
+      @AuthenticationPrincipal ApiClient client,
+      @RequestParam(required = false) UUID merchantId,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "50") @Min(1) @Max(100) int size) {
+    return settlements.list(client, merchantId, page, size);
   }
 
   @Operation(summary = "Read a final settlement", security = @SecurityRequirement(name = "apiKey"))

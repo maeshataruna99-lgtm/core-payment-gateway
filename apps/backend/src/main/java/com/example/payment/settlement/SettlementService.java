@@ -9,6 +9,7 @@ import com.example.payment.ledger.LedgerService;
 import com.example.payment.ledger.LedgerService.Line;
 import com.example.payment.ledger.LedgerService.LineKind;
 import com.example.payment.merchant.ApiClient;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -69,7 +70,9 @@ public class SettlementService {
    * @param adjustments zero or negative
    * @param id null for a preview
    * @param finalizedAt null for a preview
+   * @param lines null in a list
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   public record Settlement(
       UUID id,
       UUID merchantId,
@@ -84,6 +87,31 @@ public class SettlementService {
 
   /** The result of finalizing. */
   public record Finalized(Settlement settlement, boolean replayed) {}
+
+  /** Lists final batches, newest first. A merchant only sees its own. */
+  @Transactional(readOnly = true)
+  public List<Settlement> list(ApiClient client, UUID merchantId, int page, int size) {
+    UUID scope = client.role() == ApiClient.Role.MERCHANT ? client.merchantId() : merchantId;
+    return jdbc.sql(
+            """
+            SELECT * FROM settlement_batches WHERE (?::uuid IS NULL OR merchant_id = ?)
+            ORDER BY finalized_at DESC LIMIT ? OFFSET ?
+            """)
+        .params(scope, scope, size, (long) page * size)
+        .query((rs, row) ->
+            new Settlement(
+                rs.getObject("id", UUID.class),
+                rs.getObject("merchant_id", UUID.class),
+                rs.getLong("gross"),
+                rs.getLong("fees"),
+                rs.getLong("refunds"),
+                rs.getLong("adjustments"),
+                rs.getLong("net"),
+                true,
+                rs.getTimestamp("finalized_at").toInstant(),
+                null))
+        .list();
+  }
 
   @Transactional(readOnly = true)
   public Settlement preview(UUID merchantId) {

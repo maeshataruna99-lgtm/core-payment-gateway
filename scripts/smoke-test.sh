@@ -4,7 +4,7 @@
 #      settlement, audit chain, and reconciliation from a clean checkout.
 # Prerequisites: Docker with Compose, curl, and openssl. Java is not needed.
 # How to run: sh scripts/smoke-test.sh
-# Inputs: BACKEND_PORT, optional, defaults to 8080.
+# Inputs: BACKEND_PORT, optional, defaults to 8080. FRONTEND_PORT, optional, defaults to 5173.
 #         DEMO_MERCHANT_API_KEY, DEMO_OPERATOR_API_KEY, and PROVIDER_CALLBACK_SECRET, optional,
 #         must match the demo.
 #         KEEP_RUNNING=1 leaves the demo running.
@@ -54,6 +54,15 @@ status_of() {
 }
 
 docker compose -f "$compose_file" up --detach --build --wait || fail "the demo did not start"
+
+frontend="http://localhost:${FRONTEND_PORT:-5173}"
+case "$(curl -fsS "$frontend/checkout/any-route")" in
+  *'PayGate Sandbox'*) ;;
+  *) fail "the frontend did not serve the app on one of its routes" ;;
+esac
+[ "$(status_of "$frontend/api/v1/me")" = "401" ] || fail "the frontend did not forward /api"
+[ "$(status_of -H "X-Api-Key: $merchant_key" "$frontend/api/v1/me")" = "200" ] \
+  || fail "the frontend did not forward the API key"
 
 health="$(curl -fsS "$base/actuator/health")"
 case "$health" in

@@ -193,6 +193,7 @@ public class CheckoutService {
     CheckoutSession session = find(checkoutId);
     return new CheckoutResponse(
         session.id(),
+        merchantName(session.merchantId()),
         session.merchantOrderId(),
         session.amount(),
         session.currency(),
@@ -212,9 +213,17 @@ public class CheckoutService {
     return sessions.findById(checkoutId).orElseThrow(CheckoutService::notFound);
   }
 
+  private String merchantName(UUID merchantId) {
+    return jdbc.sql("SELECT name FROM merchants WHERE id = ?")
+        .param(merchantId)
+        .query(String.class)
+        .single();
+  }
+
   private CheckoutResponse merchantView(CheckoutSession session) {
     return new CheckoutResponse(
         session.id(),
+        merchantName(session.merchantId()),
         session.merchantOrderId(),
         session.amount(),
         session.currency(),

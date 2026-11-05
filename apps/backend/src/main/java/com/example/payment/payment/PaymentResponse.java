@@ -17,6 +17,7 @@ import java.util.UUID;
  * @param instruction sample payment details that cannot be paid
  * @param attempts all attempts on this checkout, newest first, at most 20
  * @param timeline the history of this attempt, hidden from customers
+ * @param discrepancies recorded differences, hidden from customers
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PaymentResponse(
@@ -34,7 +35,11 @@ public record PaymentResponse(
     Instant createdAt,
     Instant updatedAt,
     List<AttemptSummary> attempts,
-    List<TimelineEntry> timeline) {
+    List<TimelineEntry> timeline,
+    List<DiscrepancyEntry> discrepancies) {
+
+  /** A recorded difference on this attempt, for review. */
+  public record DiscrepancyEntry(String type, String detail, Instant at) {}
 
   /** What the customer is shown for a pending attempt. */
   public record Instruction(String label, String value) {}
