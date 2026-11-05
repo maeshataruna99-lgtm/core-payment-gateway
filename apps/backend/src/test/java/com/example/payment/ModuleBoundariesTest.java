@@ -32,7 +32,20 @@ class ModuleBoundariesTest {
             "com.example.payment.config..",
             "com.example.payment.security..",
             "com.example.payment.merchant..",
-            "com.example.payment.checkout..")
+            "com.example.payment.checkout..",
+            "com.example.payment.payment..",
+            "com.example.payment.provider..")
+        .check(classes);
+  }
+
+  @Test
+  void providersKnowNothingAboutPaymentRules() {
+    noClasses()
+        .that()
+        .resideInAPackage("com.example.payment.provider..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAnyPackage("com.example.payment.payment..", "com.example.payment.checkout..")
         .check(classes);
   }
 

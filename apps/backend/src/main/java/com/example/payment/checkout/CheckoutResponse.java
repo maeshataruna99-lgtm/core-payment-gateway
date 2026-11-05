@@ -1,5 +1,6 @@
 package com.example.payment.checkout;
 
+import com.example.payment.provider.PaymentMethod;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.UUID;
  *
  * @param amount whole rupiah
  * @param sandbox always true, because this system moves no real money
+ * @param latestPayment the newest attempt on this checkout, null when there is none
  * @param checkoutUrl hidden from customers. Its URL fragment holds the customer token, which
  *     browsers do not send to servers, so it stays out of access logs.
  */
@@ -23,18 +25,10 @@ public record CheckoutResponse(
     String description,
     CheckoutSession.Status status,
     Instant expiresAt,
-    List<PaymentChannel> allowedChannels,
+    List<PaymentMethod> allowedChannels,
     boolean sandbox,
+    LatestPaymentLookup.Summary latestPayment,
     String checkoutUrl,
     String customerReference,
     Map<String, String> metadata,
-    Instant createdAt) {
-
-  /** The simulated payment methods a customer can choose. */
-  public enum PaymentChannel {
-    QRIS,
-    VIRTUAL_ACCOUNT,
-    EWALLET,
-    CARD_SIMULATED
-  }
-}
+    Instant createdAt) {}

@@ -75,6 +75,10 @@ Each row is the current state. Each column is the incoming event. "No change" me
 - Decision 2 decides whether a `SUCCEEDED` attempt settles the checkout or becomes a discrepancy to refund.
 - A replayed event ID is rejected before this table applies.
 
+The payment ID in the API is the ID of one attempt. Every event is recorded in `payment_attempt_events`. A status check runs for `UNKNOWN` attempts, and for `CREATED` attempts older than one minute.
+
+A provider call never reports success, because the state table has no such column. This differs from blueprint UC-03. Success only arrives as a callback.
+
 ## Refund states
 
 A refund moves from `PENDING` to `SUCCEEDED` or `FAILED`. The payment stays `SUCCEEDED`, and its refunded amount is calculated from its refunds.

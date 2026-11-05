@@ -46,3 +46,5 @@ payment:
     max-ttl: 7d
   rate-limit:
     requests-per-minute: 600
+  sweeper:
+    cron: "*/15 * * * * *"

@@ -20,10 +20,11 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "checkout_sessions")
 public class CheckoutSession {
 
-  /** The lifecycle of a session. Phase 3 adds the paid state. */
+  /** The lifecycle of a session. */
   public enum Status {
     OPEN,
-    EXPIRED
+    EXPIRED,
+    PAID
   }
 
   @Id private UUID id;
@@ -57,6 +58,10 @@ public class CheckoutSession {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  /** Set only by the conditional update in {@link CheckoutService#markPaid}. */
+  @Column(name = "paid_attempt_id", insertable = false, updatable = false)
+  private UUID paidAttemptId;
+
   protected CheckoutSession() {}
 
   public CheckoutSession(
@@ -83,6 +88,9 @@ public class CheckoutSession {
   }
 
   public Status status(Instant now) {
+    if (paidAttemptId != null) {
+      return Status.PAID;
+    }
     return now.isBefore(expiresAt) ? Status.OPEN : Status.EXPIRED;
   }
 

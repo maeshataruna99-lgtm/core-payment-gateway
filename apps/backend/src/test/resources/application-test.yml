@@ -4,3 +4,6 @@ payment:
     base-url: http://checkout.test
   rate-limit:
     requests-per-minute: 100000
+  sweeper:
+    # Tests run the sweeper directly, so results do not depend on timing.
+    cron: "-"

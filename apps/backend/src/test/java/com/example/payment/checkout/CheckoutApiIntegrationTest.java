@@ -93,7 +93,7 @@ class CheckoutApiIntegrationTest extends AbstractIntegrationTest {
     assertEquals(250000, checkout.get("amount").asLong());
     assertEquals("OPEN", checkout.get("status").asString());
     assertTrue(checkout.get("sandbox").asBoolean());
-    assertEquals(4, checkout.get("allowedChannels").size());
+    assertEquals(2, checkout.get("allowedChannels").size());
     assertTrue(
         checkout
             .get("checkoutUrl")

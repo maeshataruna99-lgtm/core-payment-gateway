@@ -1,10 +1,10 @@
 package com.example.payment.checkout;
 
-import com.example.payment.checkout.CheckoutResponse.PaymentChannel;
 import com.example.payment.common.DomainException;
 import com.example.payment.common.Hashing;
 import com.example.payment.common.IdempotencyStore;
 import com.example.payment.merchant.ApiClient;
+import com.example.payment.provider.PaymentMethod;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
@@ -13,7 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -38,13 +40,15 @@ public class CheckoutService {
   static final String CURRENCY = "IDR";
   private static final Set<String> METADATA_KEYS = Set.of("campaign", "channel", "note");
   private static final int METADATA_VALUE_MAX = 128;
-  private static final List<PaymentChannel> CHANNELS = List.of(PaymentChannel.values());
+  private static final List<PaymentMethod> CHANNELS = List.of(PaymentMethod.values());
 
   private final CheckoutSessionRepository sessions;
   private final EntityManager entityManager;
   private final IdempotencyStore idempotency;
   private final CheckoutTokenService tokens;
   private final CheckoutProperties properties;
+  private final LatestPaymentLookup latestPayments;
+  private final JdbcClient jdbc;
   private final Clock clock;
 
   public CheckoutService(
@@ -53,13 +57,84 @@ public class CheckoutService {
       IdempotencyStore idempotency,
       CheckoutTokenService tokens,
       CheckoutProperties properties,
+      LatestPaymentLookup latestPayments,
+      JdbcClient jdbc,
       Clock clock) {
     this.sessions = sessions;
     this.entityManager = entityManager;
     this.idempotency = idempotency;
     this.tokens = tokens;
     this.properties = properties;
+    this.latestPayments = latestPayments;
+    this.jdbc = jdbc;
     this.clock = clock;
+  }
+
+  /** What the payment module may know about a checkout. */
+  public record PayableCheckout(
+      UUID id, UUID merchantId, long amount, String currency, Instant expiresAt, boolean payable) {}
+
+  /** Returns a checkout for a merchant that owns it, or for staff. */
+  @Transactional(readOnly = true)
+  public PayableCheckout findForClient(UUID checkoutId, ApiClient client) {
+    CheckoutSession session = find(checkoutId);
+    if (client.role() == ApiClient.Role.MERCHANT
+        && !session.merchantId().equals(client.merchantId())) {
+      throw notFound();
+    }
+    return payable(session);
+  }
+
+  /** Returns a checkout for a customer holding its token. */
+  @Transactional(readOnly = true)
+  public PayableCheckout findForCustomer(UUID checkoutId, String token) {
+    if (!tokens.isValid(checkoutId, token)) {
+      throw notFound();
+    }
+    return payable(find(checkoutId));
+  }
+
+  /**
+   * Returns a checkout without an access check. Callers must already have authorized the caller.
+   */
+  @Transactional(readOnly = true)
+  public PayableCheckout findById(UUID checkoutId) {
+    return payable(find(checkoutId));
+  }
+
+  public boolean isValidToken(UUID checkoutId, String token) {
+    return tokens.isValid(checkoutId, token);
+  }
+
+  /**
+   * Settles a checkout with the first successful attempt.
+   *
+   * @return false when another attempt already settled it
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public boolean markPaid(UUID checkoutId, UUID attemptId) {
+    return jdbc.sql(
+                """
+                UPDATE checkout_sessions SET paid_attempt_id = ?
+                WHERE id = ? AND paid_attempt_id IS NULL
+                """)
+            .params(attemptId, checkoutId)
+            .update()
+        == 1;
+  }
+
+  private PayableCheckout payable(CheckoutSession session) {
+    return new PayableCheckout(
+        session.id(),
+        session.merchantId(),
+        session.amount(),
+        session.currency(),
+        session.expiresAt(),
+        session.status(clock.instant()) == CheckoutSession.Status.OPEN);
+  }
+
+  private LatestPaymentLookup.Summary latestPayment(UUID checkoutId) {
+    return latestPayments.latest(checkoutId).orElse(null);
   }
 
   /** The result of a create call. */
@@ -126,6 +201,7 @@ public class CheckoutService {
         session.expiresAt(),
         CHANNELS,
         true,
+        latestPayment(session.id()),
         null,
         null,
         null,
@@ -147,6 +223,7 @@ public class CheckoutService {
         session.expiresAt(),
         CHANNELS,
         true,
+        latestPayment(session.id()),
         properties.baseUrl() + "/checkout/" + session.id() + "#token=" + tokens.issue(session.id()),
         session.customerReference(),
         session.metadata(),

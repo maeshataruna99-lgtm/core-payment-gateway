@@ -1,6 +1,6 @@
 # Threat Model
 
-Status: Draft, 2026-11-05. The controls for duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
+Status: Draft, 2026-11-05. The controls for client-set status, double payment, duplicate requests, cross-merchant access, and rate limits exist, and RBAC exists for checkout and payment. The simulated answer endpoint exists only in the demo and test profiles, but signed callbacks do not exist yet. The secret leak controls exist except log redaction, which is limited to returning no internal error detail to clients. Other controls are not implemented yet.
 
 ## Assets
 

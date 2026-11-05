@@ -19,7 +19,8 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>How: Everything requires authentication unless listed here. Requests are stateless and use no
  * cookies, so CSRF protection does not apply.
  *
- * <p>Safety: The public checkout read is protected by a per-checkout token in its controller.
+ * <p>Safety: Public checkout and payment routes are protected by a per-checkout token in their
+ * services.
  *
  * <p>Tests: {@code CheckoutApiIntegrationTest}.
  */
@@ -46,6 +47,12 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/checkout-sessions")
                 .hasRole("MERCHANT")
+                .requestMatchers(HttpMethod.POST, "/api/v1/payments")
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/payments/*")
+                .permitAll()
+                .requestMatchers("/api/v1/sandbox/**")
+                .hasAnyRole("OPERATOR", "ADMIN")
                 .anyRequest()
                 .authenticated())
         .exceptionHandling(e ->
