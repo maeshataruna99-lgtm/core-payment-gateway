@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: payment-gateway
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/paygate}
+    username: ${DB_USERNAME:paygate}
+    password: ${DB_PASSWORD:}
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  structured:
+    format:
+      console: ecs

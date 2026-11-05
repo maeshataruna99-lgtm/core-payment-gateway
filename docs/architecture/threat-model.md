@@ -1,6 +1,6 @@
 # Threat Model
 
-Status: Draft, 2026-11-05. No control below is implemented yet.
+Status: Draft, 2026-11-05. Only the secret leak controls from Phase 1 exist so far, and log redaction is limited to returning no internal error detail to clients.
 
 ## Assets
 
